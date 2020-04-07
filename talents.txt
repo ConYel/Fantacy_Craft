@@ -1,0 +1,45 @@
+Talent	Attribute_1	Modifier_1	Attribute_2	Modifier_2	Attribute_3	Modifier_3	Benefit_1	Benefit_2	Benefit_3	Benefit_4	Benefit_5	Base_speed	Requirements	Summary
+Adaptable	No	0	No	0	No	0	Grace_Under_Pressure	Inquisitive_Mind	Mix_Up	No	No	30	No	You can find a solution to almost any problem and it’s often wholly unexpected.
+Agile	Dex	2	No	0	No	0	Double_boost_Dex	Natural_Elegance	Parry	No	No	30	No	Your body is quicker than most eyes!
+Aesonian_cloak_n_dagger	Cha	2	Con	-2	No	0	Celebrated	Encouragement	Enlightened_Impress	Sharp_Mind	No	30	No	The blue-blooded inheritors of ancient Aesonia have kept their ancestors’ ideals of excellence and beauty alive to the present day
+Charismatic	Cha	2	No	0	No	0	Charming	Double_boost_Cha	Encouragement	No	No	30	No	Your natural presence is almost overwhelming.
+Crusading	Any	2	Any	-2	No	0	Crunch!	Iron_Will	Higher_Calling	Sterner_Stuff	No	30	Alignment	You focus is… intense.
+Cunning	Dex	2	Cha	-2	No	0	Charming	Cheap_Shot	Sharp_Mind	Tenacious_Spirit	No	30	No	You’re a survivor who considers every angle and how to exploit it.
+Educated	Int	2	Dex	-2	No	0	Broad_Learning	If_I_Recall...	Linguist	Slow_and_Steady	No	30	No	You enjoy all the advantages of a higher education.
+Gifted	Any	2	Any	-2	No	0	Basic_Skill_Mastery	Limited_Proficiencies	Origin_Skill	Sharp_Mind	No	30	No	You’ve found your calling... and mastered i
+Grizzled	Con	2	Dex	-2	No	0	Agile_Defence	Last_Chance	Rock_Solid	No	No	30	No	You’ve survived things other folk can barely imagine
+Hardy	Con	2	No	-2	No	0	Double_Boost_Con	Iron_Gut	Thick_Hide_II	No	No	30	No	You feel the blows but they don’t really bother you much
+Industrious	Con	1	No	0	No	0	Charming	Encouragement	Enlightened_Crafting	Yeoman's_Work	No	30	No	You always put your time to good use
+Intelligent	Int	2	No	0	No	0	Double_Boost_Int	Split_Decision	No	No	No	30	No	You’ve always been the sharpest knife in the drawer.
+Methodical	Wis	1	No	0	No	0	Enlightened_Haggle	Enlightened_Investigate	Free_Hint	Origin_Skill	Slow_and_Steady	30	No	Your thinking may sometimes seem slow and ponderous to others, but you tend to uncover the truth of things with few missteps.
+Nimble	Dex	2	Str	-2	No	0	Called_Shot	Cat_Fall	Enlightened_Acrobatics	Last_Chance	No	40	No	You’re light on your feet and quick to avoid harm.
+Ruthless	Any	1	Any	1	No	0	Always_Ready	Cheap_Shot	Menacing_Threat	No	No	30	No	Whatever it takes, you’re always up for the challenge.
+Savage	Str	2	Int	-2	No	0	Enlightened_Survival	Great_Fortitude	Lean_Season	No	No	40	No	You’re untamed, born and bred far outside civilization
+Savvy	Wis	2	Str	-2	No	0	Free_Hint	Grace_Under_Pressure	If_I_Recall...	No	No	30	No	You always have a plan... or at least look like you do.
+Single-minded	Con	2	Int	-2	No	0	Crunch!	Enlightened_Resolve	Relentless_Attack	War_of_Attrition	No	30	No	Your focus and determination cannot be swayed.
+Stern	Str	2	Con	-2	No	0	Grueling_Combatant	Light_Sleeper	No_Pain	Relentless_Attack	Unbreakable	30	No	When worn and haggard from your trials, you reveal a core a tough as iron
+Striking	Cha	2	Con	-2	No	0	Celebrated	Engaging_Diversion	Natural_Elegance	No	No	30	No	Your good looks set hearts aflutter and keep the poets in business.
+Strong	Str	2	No	0	No	0	Double_Boost_Str	Improved_Stability	Shove	No	No	30	No	If oxen could arm-wrestle you’d still win every time.
+Svelte	Cha	2	Wis	-2	No	0	Charming	Enlightened_Athletics	Rock_Solid	Shove	No	30	No	You have a predator’s build and natural magnetism.
+Unpredictable	Int	1	No	0	No	0	Lightning_Reflexes	Mix_Up	Split_Decision	No	No	30	No	Your quicksilver thoughts leave most people reeling.
+Vigilant	Wis	2	Int	-2	No	0	Always_Ready	Enlightened_Notice	Lightning_Reflexes	No	No	30	No	You’re always on your guard.
+Wily	Int	2	Cha	-2	No	0	Agile_Defence	Engaging_Diversion	Enlightened_Tactics	Mix_Up	No	30	No	People would like you more if you didn’t say ‘I told you so’ quite so often.
+Wise	Wis	2	No	-2	No	0	Double_Boost	Free_Hint	Inquisitive_Mind	No	No	30	No	When you speak, everyone falls silent to hear it.
+Balataic_cloak_n_dagger	Con	2	No	0	No	0	Bloodthirsty	Crunch!	Enlightened_Survival	Hearty_Appetite	Iron_Gut	40	No	Those born of the savage northern tribes are rugged survivors and mighty warriors.
+Hykosian_cloak_n_dagger	Any	2	Any	-2	No	0	Cold_Blooded	Menacing_Threat	Natural_Elegance	Split_Decision	No	30	No	The men of the South are as handsome, harsh, and unpredictable as their desert home.
+Thesterian_cloak_n_dagger	Str	2	or_Int	2	No	0	Aloof	Fearless_I	Linguist	Relentless_Attack	The_Gift	30	No	The insular and unconquerable people of Atrodia make magic and war with equal ease.
+Ahset_sunchaser	Str	2	No	0	No	0	Enlightened_Haggle	War_of_Attrition	No	No	No	30	No	The followers of Longtooth had no difficulty joining with the dwarves of the Fang Reaches to build a nation dedicated to fighting the Crone and her minions.
+Janno_sunchaser	Cha	2	No	0	No	0	Double_Boost	Mixed_Blood	Mix_Up	No	No	30	No	The inheritors of the Rascal have made Anmai their new home and are prepared to defend it against all tyrants.
+Matha_sunchaser	Con	2	No	0	No	0	Broad_Learning	Called_Shot	Double_Boost	No	No	30	No	The few survivors of Lady Snowblade’s folk have become fast friends with the drakes of the Black Peaks and are slowly recovering from the terrible cost they paid during the Flight from the Underheart.
+Sharos_sunchaser	Wis	2	No	0	No	0	Free_Hint	Natural_Elegance	Sharp_Mind	No	No	30	No	Dedicated to building a new life in the rich waters of the Gron’Ver, the followers of Brighteyes have established a thriving nation of enlightenment in the midst of a terrible war.
+Curmudgeonly	Wis	2	Cha	-2	No	0	Free_Hint	If_I_Recall...	Yeoman's_Work	No	No	30	No	You know you're right, but you also make sure everyone else knows it, too
+Fierce	Str	2	No	0	No	0	Menacing_Threat	No_Pain	No	No	No	30	No	You are filled to the brim with wild and untamed energy.
+Fleet	No	0	No	0	No	0	Agile_Defence	Mobility_Basics	Stamina	Sure-Footed	No	40	No	There are two things you've always known: Running gets you there quicker and a moving target is harder to hit.
+Half-elven	Wis	1	Con	-1	No	0	Elf_Blood	Keen_Sight	Inquisitive_Mind	Inscrutable	No	30	No	You are the child of two peoples, human and elf. Furtermore, you are an exemplary example of the best both
+Half-orcish	Str	1	Con	1	Int	-1	Crunch!	Enlightened_Intimidate	Orc_Blood	Origin_Skill	No	30	No	You are the child of two peoples, human and orc This makes for an impressive mix of brute force and cunning skill.
+Hyperactive	Dex	2	Con	2	Wis	-4	Agile_Defence	Uncouth	Harrowing_Combatant	War_of_Attrition	No	30	No	You often rub people the wrong way, but you're always full of boundless ehrr… would you please stop bouncing?
+Loyal	Any	2	Any	-2	No	0	Enilghtened_Resolve	Step_In	The_Extra_Mile	No	No	30	No	Those truly loyal to their friends or ideals come in all shapes and sizes, and they never leave a man behind
+Psychopathic	Cha	2	Str	2	Wis	-2	Dreadful_Combatant	Inscrutable	No_Pain	Ragged_Wound	Reviled	30	No	Your contact with reality is often optional and violent
+Quixotic	No	0	No	0	No	0	Broad_Learning	Charming	Engaging_Diversion	Enlightened_Impress	Heroism	30	No	If only they could see with your eyes
+Stoic	Wis	2	Dex	-2	No	0	Enlightened_Resolve	Inscrutable	No_Pain	Unbreakable	Undaunted	30	No	You can take it and not even flinch.
+Tenacious	Con	2	Cha	-2	No	0	Damned__If_You_Do	Enlightened_Resolve	Iron_Gut	Tenacious_Spirit	Unbreakable	30	No	You never give up

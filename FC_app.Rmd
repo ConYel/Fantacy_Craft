@@ -1,0 +1,231 @@
+---
+title: "Fantacy Craft application"
+author: "Constantinos Yeles"
+todate: "`r format(Sys.time(), '%a_%b_%d_%Y')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+---
+## load libraries
+```{r load libraries}
+suppressPackageStartupMessages({
+  library('tidyverse')
+  library('data.table')
+  library("shiny")
+  library("colourpicker")
+})
+```
+## add todate
+```{r todate_of_analysis}
+todate <- format(Sys.time(), "%d_%b_%Y")
+```
+## tables we need
+```{r}
+species <- readxl::read_xlsx("FC_tables/Species.xlsx")
+talents <- readxl::read_xlsx("FC_tables/Talents.xlsx")
+specialties <- readxl::read_xlsx("FC_tables/Specialties.xlsx")
+Attr_sum <- readxl::read_xlsx("FC_tables/Attributes/Attributes_summary.xlsx")
+Attr_sum_sc <- readxl::read_xlsx("FC_tables/Attributes/Attributes_scores.xlsx")
+Attr_scores <- readxl::read_xlsx("FC_tables/Attributes/Attributes_system.xlsx")
+```
+## functions we need
+```{r}
+# select the attribute scores----
+## provide the count of each value you can use
+## to put as an attribute
+Attr_score_select <- function(x){
+    Attr_scores %>%
+        filter(scope == x) %>%
+        pivot_longer(-scope) %>% 
+        count(value)
+}
+## change the number of the score you still have
+Attr_score_remove <- function(df, score){
+    df %>% 
+        mutate(n = ifelse(value == score, n-1, n)) %>% 
+        mutate(n = ifelse(n == 0, NA, n)) %>% 
+        drop_na()  
+}
+
+```
+
+## ui
+```{r}
+ui <- fluidPage(
+   theme = shinythemes::shinytheme("superhero"),
+    titlePanel("Create your Character:"), 
+  navlistPanel(
+    "Header A",
+    tabPanel("Character Name",
+      textInput("ch_name","Enter character name: ", "Manohar")),
+   
+    tabPanel("Player Name",
+      textInput("player", "Enter player name: ", "My name")),
+    
+    tabPanel("Basic Characteristics",
+      sliderInput("ch_age", "Select the age of your character:",
+                min = 18, max = 100,
+                value = c(25), pre = "years "),
+      
+      selectInput("ch_gender", "Select character gender: ",
+                choices = c("Female", "Male", "Non applicable")),
+    
+      colourInput("ch_eyes", "Select character eye color", "brown",
+                              palette = "limited",
+                              showColour = "background"),
+      
+      colourInput("ch_hair", "Select character hair color", "black",
+                              palette = "limited",
+                              showColour = "background"),
+      
+      numericInput("ch_xp", "Select the xp of your character:",
+                 value = 0, min = 0, max = 600000),
+      
+      sliderInput("ch_height", "Select character height:",
+                 value = 10, min = 10, max = 600, pre = "cm "),
+      
+      sliderInput("ch_weight", "Select character weight: ",
+                 value = 1, min = 1, max = 99999, pre = "g ")
+      ),
+    # table with Attributes score
+    h4("Check the Attributes scores of your character:"),
+   # DT::dataTableOutput("table"),
+    "Header B",
+    tabPanel("Component 3"),
+    tabPanel("Component 4"),
+    "-----",
+    tabPanel("Component 5")
+  )
+   
+)
+
+
+############
+ui <- fluidPage(
+ 
+  
+  
+  sidebarPanel(
+    
+    
+    # table with Attributes score
+    h4("Check the Attributes scores of your character:"),
+    DT::dataTableOutput("table"),
+    
+    selectInput("ch_species", "Select character species: ",
+                choices = species$Species),
+    
+    selectInput("ch_talent", "Select character talent: ",
+                choices = talents$Talent),
+    selectInput("ch_specialty", "Select character specialty: ",
+                choices = specialties$Specialty),
+    
+    sliderInput("ch_age", "Select the age of your character:",
+                min = 18, max = 100,
+                value = c(25), pre = "years "),
+    
+    selectInput("ch_gender", "Select character gender: ",
+                choices = c("Female", "Male", "Non applicable")),
+    
+    colourpicker::colourInput("ch_eyes", "Select character eye color", "brown",
+                              palette = "limited",
+                              showColour = "background"),
+    colourpicker::colourInput("ch_hair", "Select character hair color", "black",
+                              palette = "limited",
+                              showColour = "background"),
+    numericInput("ch_xp", "Select the xp of your character:",
+                 value = 0, min = 0, max = 600000),
+    numericInput("ch_height", "Select character height:",
+                 value = 10, min = 10, max = 600),
+    numericInput("ch_weight", "Select character weight: ",
+                 value = 1, min = 1, max = 99999)
+    
+    
+  ),
+  
+  selectInput(inputId = 'scores',
+              label = "Choose Attribute scores for your character:", 
+              choices = c(Choose='', Attr_scores$scope ),
+              selectize=TRUE),
+  
+  uiOutput("Strength_ui"),
+  uiOutput("Dexterity_ui"),
+  uiOutput("Constitution_ui"),
+  uiOutput("Intelligence_ui"),
+  uiOutput("Wisdom_ui"),
+  uiOutput("Charisma_ui")
+)
+```
+## server
+```{r}
+server <- function(input, output) {
+  output$table <- DT::renderDataTable(DT::datatable(
+    Attr_scores, style = 'bootstrap', options = list(pageLength = 13)))
+  Scores <- reactive(Attr_score_select(input$scores))
+  
+  output$Strength_ui <- renderUI({
+    #Strength
+           selectInput('Strength_1', 
+                       label = "Choose Strength score for your character:", 
+                       c(Choose='', 
+                         as.character(Scores()$value))
+           )
+  })
+  Scores1 <- reactive(Scores() %>%
+                        Attr_score_remove(input$Strength_1))
+  #Dexterity
+  output$Dexterity_ui = renderUI(
+    selectInput('Dexterity_1',
+                label = "Choose Dexterity score for your character:",
+                c(Choose='', as.character(Scores1()$value))
+    )
+  )
+  Scores2 <- reactive(Scores1() %>%
+                        Attr_score_remove(input$Dexterity_1))
+  #Constitution
+  output$Constitution_ui = renderUI(
+    selectInput('Constitution_1',
+                label = "Choose Constitution score for your character:",
+                c(Choose='', as.character(Scores2()$value))
+    )
+  )
+  Scores3 <- reactive(Scores2() %>%
+                        Attr_score_remove(input$Constitution_1))
+  #Intelligence
+  output$Intelligence_ui = renderUI(
+  selectInput('Intelligence_1', 
+              label = "Choose Intelligence score for your character:", 
+              c(Choose='', as.character(Scores3()$value) )
+    )
+  )
+  Scores4 <- reactive(Scores3() %>%
+                        Attr_score_remove(input$Intelligence_1))
+  #Wisdom
+  output$Wisdom_ui = renderUI(
+  selectInput('Wisdom_1', 
+              label = "Choose 'Wisdom score for your character:", 
+              c(Choose='', as.character(Scores4()$value) )
+              )
+  )
+  Scores5 <- reactive(Scores4() %>%
+                        Attr_score_remove(input$Wisdom_1))
+  #Charisma
+  output$Charisma_ui = renderUI(
+  selectInput('Charisma_1', 
+              label = "Choose 'Charisma score for your character:", 
+              c(Choose='', 
+                as.character(Scores5()$value))
+    )
+  ) 
+}
+```
+## run the app
+```{r}
+
+shinyApp(ui = ui, server = server)
+
+```
+
