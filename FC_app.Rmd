@@ -36,12 +36,19 @@ Attr_scores <- readxl::read_xlsx("FC_tables/Attributes/Attributes_system.xlsx")
 # select the attribute scores----
 ## provide the count of each value you can use
 ## to put as an attribute
-Attr_score_select <- function(x){
-    Attr_scores %>%
-        filter(scope == x) %>%
-        pivot_longer(-scope) %>% 
-        count(value)
+Attr_score_select <- function(y){
+  Attr_scores %>% 
+    as.data.table() %>% 
+    .[y] %>% 
+    pivot_longer(-scope) %>% 
+    count(value)
 }
+#Attr_score_select <- function(x,y){
+#    x[y] %>%
+       #filter(scope == x) %>%
+#        pivot_longer(-scope) %>% 
+#        count(value)
+#}
 ## change the number of the score you still have
 Attr_score_remove <- function(df, score){
     df %>% 
@@ -59,10 +66,8 @@ ui <- fluidPage(
     titlePanel("Create your Character:"), 
   navlistPanel(
     "Header A",
-    tabPanel("Character Name",
-      textInput("ch_name","Enter character name: ", "Manohar")),
-   
-    tabPanel("Player Name",
+    tabPanel("Character Info",
+      textInput("ch_name","Enter character name: ", "Manohar"),
       textInput("player", "Enter player name: ", "My name")),
     
     tabPanel("Basic Characteristics",
@@ -90,81 +95,43 @@ ui <- fluidPage(
       sliderInput("ch_weight", "Select character weight: ",
                  value = 1, min = 1, max = 99999, pre = "g ")
       ),
-    # table with Attributes score
-    h4("Check the Attributes scores of your character:"),
-   # DT::dataTableOutput("table"),
-    "Header B",
-    tabPanel("Component 3"),
+   
+   "Header B",
+    tabPanel("Main Attributes",
+      sidebarPanel(
+        selectInput(inputId = 'Scores',
+              label = "Choose Attribute scores for your character:", 
+              choices = c(Choose='', Attr_scores$scope ),
+              selectize=TRUE),
+        # select the values for each attr
+    c("Strength_ui", "Dexterity_ui",
+     "Constitution_ui","Intelligence_ui",
+      "Wisdom_ui","Charisma_ui") %>% 
+          map(~uiOutput(.x))
+      ),
+      mainPanel( 
+       # table with Attributes score
+       h4("Check the Attribute scores for your character:"),
+       DT::dataTableOutput("table"))
+      ),
+    
+    "-----",
     tabPanel("Component 4"),
     "-----",
     tabPanel("Component 5")
   )
-   
-)
-
-
-############
-ui <- fluidPage(
- 
-  
-  
-  sidebarPanel(
-    
-    
-    # table with Attributes score
-    h4("Check the Attributes scores of your character:"),
-    DT::dataTableOutput("table"),
-    
-    selectInput("ch_species", "Select character species: ",
-                choices = species$Species),
-    
-    selectInput("ch_talent", "Select character talent: ",
-                choices = talents$Talent),
-    selectInput("ch_specialty", "Select character specialty: ",
-                choices = specialties$Specialty),
-    
-    sliderInput("ch_age", "Select the age of your character:",
-                min = 18, max = 100,
-                value = c(25), pre = "years "),
-    
-    selectInput("ch_gender", "Select character gender: ",
-                choices = c("Female", "Male", "Non applicable")),
-    
-    colourpicker::colourInput("ch_eyes", "Select character eye color", "brown",
-                              palette = "limited",
-                              showColour = "background"),
-    colourpicker::colourInput("ch_hair", "Select character hair color", "black",
-                              palette = "limited",
-                              showColour = "background"),
-    numericInput("ch_xp", "Select the xp of your character:",
-                 value = 0, min = 0, max = 600000),
-    numericInput("ch_height", "Select character height:",
-                 value = 10, min = 10, max = 600),
-    numericInput("ch_weight", "Select character weight: ",
-                 value = 1, min = 1, max = 99999)
-    
-    
-  ),
-  
-  selectInput(inputId = 'scores',
-              label = "Choose Attribute scores for your character:", 
-              choices = c(Choose='', Attr_scores$scope ),
-              selectize=TRUE),
-  
-  uiOutput("Strength_ui"),
-  uiOutput("Dexterity_ui"),
-  uiOutput("Constitution_ui"),
-  uiOutput("Intelligence_ui"),
-  uiOutput("Wisdom_ui"),
-  uiOutput("Charisma_ui")
 )
 ```
 ## server
 ```{r}
 server <- function(input, output) {
-  output$table <- DT::renderDataTable(DT::datatable(
-    Attr_scores, style = 'bootstrap', options = list(pageLength = 13)))
-  Scores <- reactive(Attr_score_select(input$scores))
+  output$table <- DT::renderDataTable(
+    DT::datatable(
+      data = Attr_scores, 
+      style = 'bootstrap', 
+      options = list(pageLength = 10),
+      selection = "single"))
+  Scores <- reactive(Attr_score_select(input$table_row_last_clicked))
   
   output$Strength_ui <- renderUI({
     #Strength
