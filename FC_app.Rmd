@@ -43,12 +43,7 @@ Attr_score_select <- function(y){
     pivot_longer(-scope) %>% 
     count(value)
 }
-#Attr_score_select <- function(x,y){
-#    x[y] %>%
-       #filter(scope == x) %>%
-#        pivot_longer(-scope) %>% 
-#        count(value)
-#}
+
 ## change the number of the score you still have
 Attr_score_remove <- function(df, score){
     df %>% 
@@ -99,10 +94,13 @@ ui <- fluidPage(
    "Header B",
     tabPanel("Main Attributes",
       sidebarPanel(
-        selectInput(inputId = 'Scores',
-              label = "Choose Attribute scores for your character:", 
-              choices = c(Choose='', Attr_scores$scope ),
-              selectize=TRUE),
+        
+  #     selectInput(inputId = 'Scores',
+  #            label = "Choose Attribute scores for your character:", 
+  #            choices = c(Choose='', Attr_scores$scope ),
+  #            selectize=TRUE),
+     "Attributes",   
+        
         # select the values for each attr
     c("Strength_ui", "Dexterity_ui",
      "Constitution_ui","Intelligence_ui",
@@ -111,7 +109,7 @@ ui <- fluidPage(
       ),
       mainPanel( 
        # table with Attributes score
-       h4("Check the Attribute scores for your character:"),
+       h4("Select the row with the Attribute scores for your character:"),
        DT::dataTableOutput("table"))
       ),
     
@@ -122,6 +120,58 @@ ui <- fluidPage(
   )
 )
 ```
+## server1
+```{r}
+Scores <- list(
+  "Strength_ui",
+  "Dexterity_ui",
+  "Constitution_ui",
+  "Intelligence_ui",
+  "Wisdom_ui",
+  "Charisma_ui"
+) %>% set_names(.)
+
+
+server <- function(input, output) {
+  
+  output$table <- DT::renderDataTable(
+    DT::datatable(
+      data = Attr_scores, 
+      style = 'bootstrap', 
+      options = list(pageLength = 10),
+      selection = "single"))
+  Scores[["Strength_ui"]] <- reactive(
+  Attr_score_select(input$table_row_last_clicked))
+    
+  
+  pmap(..1 = names(Scores), ..2 = names(Scores) %>% seq_along(),
+    ..3 = c("Strength_1", "Dexterity_1",
+      "Constitution_1","Intelligence_1",
+      "Wisdom_1","Charisma_1"),
+  .f = ~ function(x, y, z){
+    output[[..1]] <- renderUI({
+      selectInput(..3,
+        label = str_c("Choose",str_remove(..1,"_ui") ,
+          "score for your character:"),
+        c(Choose='',as.character(Scores[[..1]]()$value))
+        )
+      })
+   
+    Scores[[..2+1]] <- reactive(Scores[[..1]]() %>%
+                        Attr_score_remove(input[[..3]])) 
+    }
+  )
+  
+}
+
+  
+
+
+ 
+
+```
+
+
 ## server
 ```{r}
 server <- function(input, output) {
@@ -186,7 +236,7 @@ server <- function(input, output) {
               c(Choose='', 
                 as.character(Scores5()$value))
     )
-  ) 
+  )
 }
 ```
 ## run the app
