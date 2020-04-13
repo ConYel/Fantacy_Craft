@@ -54,13 +54,26 @@ Attr_score_remove <- function(df, score){
 
 ```
 
+## character final tables
+```{r}
+Attrb_main<- tribble(
+  ~Strength, ~Dexterity, ~Constitution, ~Intelligence, ~Wisdom, ~Charisma,
+  0,0,0,0,0,0
+)
+
+species %>% 
+  filter(Species == "Dwarf") %>% 
+  select(Attr_1:Att_Score_4) %>% 
+  pivot_longer(cols = starts_with("Attr"),) %>% 
+  filter(!value== "No")
+```
 ## ui
 ```{r}
 ui <- fluidPage(
    theme = shinythemes::shinytheme("superhero"),
     titlePanel("Create your Character:"), 
   navlistPanel(
-    "Header A",
+    "Step 0: Concept",
     tabPanel("Character Info",
       textInput("ch_name","Enter character name: ", "Manohar"),
       textInput("player", "Enter player name: ", "My name")),
@@ -91,14 +104,9 @@ ui <- fluidPage(
                  value = 1, min = 1, max = 99999, pre = "g ")
       ),
    
-   "Header B",
+   "Step 1: Attributes",
     tabPanel("Main Attributes",
       sidebarPanel(
-        
-  #     selectInput(inputId = 'Scores',
-  #            label = "Choose Attribute scores for your character:", 
-  #            choices = c(Choose='', Attr_scores$scope ),
-  #            selectize=TRUE),
      "Attributes",   
         
         # select the values for each attr
@@ -113,15 +121,35 @@ ui <- fluidPage(
        DT::dataTableOutput("table"))
       ),
     
-    "-----",
-    tabPanel("Component 4"),
+    "Step 2: Origin",
+    tabPanel("Species",
+      selectInput("ch_Species", "Select character species: ",
+                choices = species$Species),
+      conditionalPanel(
+        condition = "input.ch_Species == 'Human'",
+        selectInput("ch_Talent", "Select character Talent: ",
+          choices = talents$Talent)
+        )
+      ),
+     tabPanel("Specialty",
+      selectInput("ch_Species", "Select character species: ",
+                choices = specialties$Specialty)),
     "-----",
     tabPanel("Component 5")
   )
 )
+
+
 ```
 ## server1
 ```{r}
+ spec_test <- reactive(input$ch_Species)
+  if(spec_test() == "Human" ){
+  output$Talents = renderUI(
+    selectInput("ch_Talents", "Select character talent: ",
+                choices = talents$Talent)
+  )
+  }
 Scores <- list(
   "Strength_ui",
   "Dexterity_ui",
@@ -141,13 +169,15 @@ server <- function(input, output) {
       options = list(pageLength = 10),
       selection = "single"))
   Scores[["Strength_ui"]] <- reactive(
-  Attr_score_select(input$table_row_last_clicked))
+  
+    Attr_score_select(input$table_row_last_clicked))
     
   
-  pmap(..1 = names(Scores), ..2 = names(Scores) %>% seq_along(),
-    ..3 = c("Strength_1", "Dexterity_1",
+  pmap(..1 = names(Scores)[1:5], 
+    ..2 = names(Scores)[1:5] %>% seq_along(),
+    ..3 = c("Strength_1","Dexterity_1",
       "Constitution_1","Intelligence_1",
-      "Wisdom_1","Charisma_1"),
+      "Wisdom_1"),
   .f = ~ function(x, y, z){
     output[[..1]] <- renderUI({
       selectInput(..3,
@@ -156,10 +186,17 @@ server <- function(input, output) {
         c(Choose='',as.character(Scores[[..1]]()$value))
         )
       })
-   
-    Scores[[..2+1]] <- reactive(Scores[[..1]]() %>%
-                        Attr_score_remove(input[[..3]])) 
+   Scores[[..2 +1]] <- reactive(Scores[[..1]]() %>%
+                        Attr_score_remove(input[[..3]]))
     }
+  )
+   #Charisma
+  output$Charisma_ui = renderUI(
+  selectInput('Charisma_1', 
+              label = "Choose 'Charisma score for your character:", 
+              c(Choose='', 
+                as.character(Scores5()$value))
+    )
   )
   
 }
@@ -237,6 +274,10 @@ server <- function(input, output) {
                 as.character(Scores5()$value))
     )
   )
+ 
+  
+  
+  
 }
 ```
 ## run the app
