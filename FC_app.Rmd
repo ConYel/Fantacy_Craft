@@ -38,8 +38,7 @@ Attr_scores <- readxl::read_xlsx("FC_tables/Attributes/Attributes_system.xlsx")
 ## to put as an attribute
 Attr_score_select <- function(y){
   Attr_scores %>% 
-    as.data.table() %>% 
-    .[y] %>% 
+    .[y,] %>% 
     pivot_longer(-scope) %>% 
     count(value)
 }
@@ -56,16 +55,42 @@ Attr_score_remove <- function(df, score){
 
 ## character final tables
 ```{r}
-Attrb_main<- tribble(
+Attrb_main <- tribble(
   ~Strength, ~Dexterity, ~Constitution, ~Intelligence, ~Wisdom, ~Charisma,
   0,0,0,0,0,0
 )
 
-species %>% 
-  filter(Species == "Dwarf") %>% 
-  select(Attr_1:Att_Score_4) %>% 
-  pivot_longer(cols = starts_with("Attr"),) %>% 
-  filter(!value== "No")
+
+for(z in species$Species){
+test1 <- species %>% 
+  filter(Species == z) %>% 
+  t() %>% 
+  as_tibble(rownames = "Info") %>% 
+  filter(!V1 == "No",!V1 == 0) %>% 
+  deframe() %>% 
+  data.frame() %>% 
+  t() %>% 
+  as_tibble()
+
+map2( 
+  .x = names(test1)[names(test1) %>% str_detect("Attr_")],
+  .y = names(test1)[names(test1) %>% str_detect("Attr_")] %>% 
+    str_replace("r_","_Score_"), 
+  ~ test1 %>% 
+    add_column(!!test1[[.x]] := test1[[.y]],.before = "Species")) %>% 
+  reduce(bind_cols) %>%
+   select(
+     -c(Species1:!!str_c(names(test1)[length(names(test1))],"1")),
+     -c(!!names(test1)[str_detect(names(test1),"Attr_")][1]:!!str_replace(names(test1)[str_detect(names(test1),"Attr_")][2],"r_","_Score_")) ) %>% 
+  select(length(.),everything()) %>% 
+   t() %>% 
+  as_tibble(rownames = "Info") 
+}
+
+map(species$Species,~ ran_F1
+)
+
+#as_tibble(cbind(nms = names(test1), t(test1)))
 ```
 ## ui
 ```{r}
@@ -123,17 +148,29 @@ ui <- fluidPage(
     
     "Step 2: Origin",
     tabPanel("Species",
-      selectInput("ch_Species", "Select character species: ",
+       sidebarPanel(
+         selectInput("ch_Species", "Select character species: ",
                 choices = species$Species),
-      conditionalPanel(
-        condition = "input.ch_Species == 'Human'",
-        selectInput("ch_Talent", "Select character Talent: ",
-          choices = talents$Talent)
-        )
+         conditionalPanel(
+           condition = "input.ch_Species == 'Human'",
+           selectInput("ch_Talent", "Select character Talent: ",
+             choices = talents$Talent)
+           )
+         ),
+      mainPanel(
+        # table with Species Info
+       h4("Information about the species of your character:"),
+       DT::dataTableOutput("table_species")
+      )
       ),
      tabPanel("Specialty",
+       sidebarPanel(
       selectInput("ch_Species", "Select character species: ",
                 choices = specialties$Specialty)),
+       mainPanel(
+         
+       )
+       ),
     "-----",
     tabPanel("Component 5")
   )
@@ -150,6 +187,8 @@ ui <- fluidPage(
                 choices = talents$Talent)
   )
   }
+
+
 Scores <- list(
   "Strength_ui",
   "Dexterity_ui",
@@ -159,6 +198,15 @@ Scores <- list(
   "Charisma_ui"
 ) %>% set_names(.)
 
+Scores_output <- list(
+  "Strength_ui",
+  "Dexterity_ui",
+  "Constitution_ui",
+  "Intelligence_ui",
+  "Wisdom_ui",
+  "Charisma_ui"
+) %>% set_names(.)
+Scores_output[[1]] <- Attr_score_select(1)
 
 server <- function(input, output) {
   
@@ -172,6 +220,22 @@ server <- function(input, output) {
   
     Attr_score_select(input$table_row_last_clicked))
     
+  test_f_1<- function(x,y){
+    Scores_output[[!!.y + 1]]  :=  Attr_score_remove(Scores_output[[.x]], 13)
+  }
+ 
+  
+  
+  imap(Scores_output,
+    .x[[!!!.y +1]] := .x %>% Attr_score_remove( 13))
+
+   imap(my_list, my_list[[.y +1]] <- .x %>% +1)
+
+  
+  map(.x = 1:4,
+    .f = as.data.table(Scores_output[[!!.x]]) := as.data.table(Scores_output[[!!.x -1]])%>% Attr_score_remove( 13)
+  )
+  
   
   pmap(..1 = names(Scores)[1:5], 
     ..2 = names(Scores)[1:5] %>% seq_along(),
@@ -218,6 +282,41 @@ server <- function(input, output) {
       style = 'bootstrap', 
       options = list(pageLength = 10),
       selection = "single"))
+  
+species_tb_1 <- reactive({
+  species %>%
+       filter(Species == input$ch_Species) %>%
+       t() %>%
+       as_tibble(rownames = "Info") %>%
+       filter(!V1 == "No",!V1 == 0) %>%
+       deframe() %>%
+       data.frame() %>%
+       t() %>%
+       as_tibble()
+})
+
+species_tb_Info <-  reactive({
+  map2(
+      .x = names(species_tb_1())[names(species_tb_1()) %>% str_detect("Attr_")],
+      .y = names(species_tb_1())[names(species_tb_1()) %>% str_detect("Attr_")] %>% 
+    str_replace("r_","_Score_"), 
+    ~ species_tb_1() %>% 
+    add_column(!!species_tb_1()[[.x]] := species_tb_1()[[.y]],.before = "Species")) %>%
+    reduce(bind_cols) %>%
+    select(
+     -c(Species1:Extra_61),
+     -c(!!names(species_tb_1())[str_detect(names(species_tb_1()),"Attr_")][1]:!!str_replace(names(species_tb_1())[str_detect(names(species_tb_1()),"Attr_")][2],"r_","_Score_")) ) %>% 
+  select(length(.),everything()) %>% 
+   t() %>% 
+  as_tibble(rownames = "Info") 
+})   
+  output$table_species <- DT::renderDataTable(
+    DT::datatable(
+      data = species_tb_Info(), 
+      style = 'bootstrap', 
+      options = list(pageLength = 10),
+      selection = 'none'))
+  
   Scores <- reactive(Attr_score_select(input$table_row_last_clicked))
   
   output$Strength_ui <- renderUI({
