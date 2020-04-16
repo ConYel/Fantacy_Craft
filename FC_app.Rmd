@@ -16,6 +16,7 @@ suppressPackageStartupMessages({
   library('data.table')
   library("shiny")
   library("colourpicker")
+  library("sortable")
 })
 ```
 ## add todate
@@ -126,7 +127,7 @@ ui <- fluidPage(
                  value = 10, min = 10, max = 600, pre = "cm "),
       
       sliderInput("ch_weight", "Select character weight: ",
-                 value = 1, min = 1, max = 99999, pre = "g ")
+                 value = 1, min = 1, max = 399999, pre = "g ")
       ),
    
    "Step 1: Attributes",
@@ -180,93 +181,67 @@ ui <- fluidPage(
 ```
 ## server1
 ```{r}
- spec_test <- reactive(input$ch_Species)
-  if(spec_test() == "Human" ){
-  output$Talents = renderUI(
-    selectInput("ch_Talents", "Select character talent: ",
-                choices = talents$Talent)
+ui <- fluidPage(
+  theme = shinythemes::shinytheme("superhero"),
+  titlePanel("Create your Character:"),
+  navlistPanel(widths = c(2, 10),
+    "Step 1: Attributes",
+    tabPanel("Main Attributes",
+      fluidRow(
+        column(width = 6,
+          h4("Select the row with the Attribute scores for your character:"),
+          # table with Attributes score
+          DT::dataTableOutput("table")
+          ),
+        column(width = 6,
+          "Attributes",
+          fluidRow(
+            column(width = 6, DT::dataTableOutput("table_sel_Atr")),
+            column(width = 6,)
+           ),
+         )
+        )
+      )
   )
-  }
-
-
-Scores <- list(
-  "Strength_ui",
-  "Dexterity_ui",
-  "Constitution_ui",
-  "Intelligence_ui",
-  "Wisdom_ui",
-  "Charisma_ui"
-) %>% set_names(.)
-
-Scores_output <- list(
-  "Strength_ui",
-  "Dexterity_ui",
-  "Constitution_ui",
-  "Intelligence_ui",
-  "Wisdom_ui",
-  "Charisma_ui"
-) %>% set_names(.)
-Scores_output[[1]] <- Attr_score_select(1)
-
+)
 server <- function(input, output) {
   
   output$table <- DT::renderDataTable(
     DT::datatable(
       data = Attr_scores, 
       style = 'bootstrap', 
-      options = list(pageLength = 10),
-      selection = "single"))
-  Scores[["Strength_ui"]] <- reactive(
+      options = list(pageLength = 13, searching = FALSE,paging = FALSE),
+      selection = "single",
+      autoHideNavigation = TRUE
+      ))
   
-    Attr_score_select(input$table_row_last_clicked))
-    
-  test_f_1<- function(x,y){
-    Scores_output[[!!.y + 1]]  :=  Attr_score_remove(Scores_output[[.x]], 13)
-  }
+  output$table_sel_Atr <- DT::renderDataTable(
+    DT::datatable(
+      data = Attr_sum %>% select(Attribute), 
+      style = 'bootstrap', 
+      options = list(
+        pageLength = 10,
+        searching = FALSE,
+        paging = FALSE),
+      selection = 'none',
+      autoHideNavigation = TRUE
+      ))
  
+  Scores <- reactive(Attr_score_select(input$table_row_last_clicked))
   
-  
-  imap(Scores_output,
-    .x[[!!!.y +1]] := .x %>% Attr_score_remove( 13))
-
-   imap(my_list, my_list[[.y +1]] <- .x %>% +1)
-
-  
-  map(.x = 1:4,
-    .f = as.data.table(Scores_output[[!!.x]]) := as.data.table(Scores_output[[!!.x -1]])%>% Attr_score_remove( 13)
-  )
-  
-  
-  pmap(..1 = names(Scores)[1:5], 
-    ..2 = names(Scores)[1:5] %>% seq_along(),
-    ..3 = c("Strength_1","Dexterity_1",
-      "Constitution_1","Intelligence_1",
-      "Wisdom_1"),
-  .f = ~ function(x, y, z){
-    output[[..1]] <- renderUI({
-      selectInput(..3,
-        label = str_c("Choose",str_remove(..1,"_ui") ,
-          "score for your character:"),
-        c(Choose='',as.character(Scores[[..1]]()$value))
-        )
-      })
-   Scores[[..2 +1]] <- reactive(Scores[[..1]]() %>%
-                        Attr_score_remove(input[[..3]]))
-    }
-  )
-   #Charisma
-  output$Charisma_ui = renderUI(
-  selectInput('Charisma_1', 
-              label = "Choose 'Charisma score for your character:", 
-              c(Choose='', 
-                as.character(Scores5()$value))
-    )
-  )
-  
+  output$Strength_ui <- renderUI({
+    #Strength
+           selectInput('Strength_1', 
+                       label = "Choose Strength score for your character:", 
+                       c(Choose='', 
+                         as.character(Scores()$value))
+           )
+  })
+ 
 }
 
   
-
+shinyApp(ui = ui, server = server)
 
  
 
