@@ -15,8 +15,58 @@ editor_options:
   chunk_output_type: console
 ---
 
-
+## tables we need
+### species info
 ```{r}
 
+species <- readxl::read_xlsx("FC_tables/Species.xlsx")
+species_gen <- species %>% 
+  select(!starts_with(c("Att","Extr")))
+
+species_Att <- species %>% 
+  select(Species, starts_with("Att")) %>% 
+  pivot_longer(cols = starts_with("Attr_"), 
+               names_to = "che_me_ne", values_to = "Attribute") %>% 
+  pivot_longer(cols = starts_with("Att_Score"), 
+               names_to = "fotte", values_to = "score") %>%
+  filter(score != 0, Attribute != "No") %>% 
+  mutate(che_me_ne = che_me_ne %>% str_remove("Attr_") %>% as.integer(),
+         fotte = fotte %>% str_remove("Att_Score_") %>% as.integer()) %>% 
+  filter(che_me_ne == fotte) %>% 
+  select(-c(che_me_ne, fotte)) %>%
+  separate_rows(Attribute)
+
+species_Ext <- species %>% 
+  select(Species, starts_with("Extr")) %>% 
+  pivot_longer(cols = c(Extra_1:Extra_10)) %>% 
+  filter(!value == "No") %>% 
+  select(-name)
+```
+
+
+```{r}
+talents <- readxl::read_xlsx("FC_tables/Talents.xlsx")
+specialties <- readxl::read_xlsx("FC_tables/Specialties.xlsx")
+Attr_sum <- readxl::read_xlsx("FC_tables/Attributes/Attributes_summary.xlsx")
+Attr_sum_sc <- readxl::read_xlsx("FC_tables/Attributes/Attributes_scores.xlsx")
+Attr_scores <- readxl::read_xlsx("FC_tables/Attributes/Attributes_system.xlsx")
+```
+
+```{r}
+## provide the count of each value you can use
+## to put as an attribute
+Attr_score_select <- function(att = "Sel1"){
+  Attr_scores %>% 
+    filter(scope == att) %>% 
+    pivot_longer(-scope) %>% 
+    count(value)
+}
+
+## change the number of the score you still have (a function only made for inter activeness)
+Attr_score_remove <- function(df, score){
+    df %>% 
+    mutate(n = ifelse(value == score, n-1, n)) %>% 
+    drop_na()
+}
 ```
 
