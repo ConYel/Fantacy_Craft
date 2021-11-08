@@ -43,9 +43,50 @@ species_Ext <- species %>%
   select(-name)
 ```
 
-
+### talents info
 ```{r}
 talents <- readxl::read_xlsx("FC_tables/Talents.xlsx")
+
+talents_Att <- talents %>% 
+  select(Talent, starts_with(c("Attri", "Modi"))) %>% 
+  pivot_longer(cols = starts_with("Attr"), 
+               names_to = "che_me_ne", values_to = "Attribute") %>% 
+  pivot_longer(cols = starts_with("Mod"), 
+               names_to = "fotte", values_to = "score") %>%
+  mutate(che_me_ne = che_me_ne %>% str_remove("Attribute_") %>% as.integer(),
+         fotte = fotte %>% str_remove("Modifier_") %>% as.integer()) %>% 
+  filter(che_me_ne == fotte) %>% 
+  select(-c(che_me_ne, fotte)) %>%
+  distinct(Talent, Attribute, score)
+
+talents_Benef <- talents %>% 
+  select(Talent, starts_with("Benef")) %>% 
+  pivot_longer(cols = starts_with("Benef"), 
+               names_to = "che_me_ne", values_to = "Benefit") %>% 
+  filter(Benefit != "No") %>% 
+  select(!che_me_ne)
+
+talents_1 <- talents %>% 
+  select(!starts_with(c("Attri", "Modi", "Benef")))
+```
+
+### specialties info
+```{r}
+specialties <- readxl::read_xlsx("FC_tables/Specialties.xlsx")
+
+specialties_1 <- specialties %>% 
+  select(!starts_with("Extra")) 
+
+specialties_extra <- specialties %>% 
+  select(Specialty, starts_with("Extra")) %>% 
+  pivot_longer(cols = starts_with("Extra"), 
+               names_to = "che_me_ne", values_to = "Extra") %>% 
+  filter(Extra != "No") %>% 
+  select(!che_me_ne)
+  
+```
+
+```{r}
 specialties <- readxl::read_xlsx("FC_tables/Specialties.xlsx")
 Attr_sum <- readxl::read_xlsx("FC_tables/Attributes/Attributes_summary.xlsx")
 Attr_sum_sc <- readxl::read_xlsx("FC_tables/Attributes/Attributes_scores.xlsx")
