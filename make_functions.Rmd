@@ -15,6 +15,15 @@ editor_options:
   chunk_output_type: console
 ---
 
+## libraries
+```{r}
+library(dplyr)
+library(tidyr)
+library(magrittr)
+library(stringr)
+```
+
+
 ## tables we need
 ### species info
 ```{r}
@@ -83,16 +92,17 @@ specialties_extra <- specialties %>%
                names_to = "che_me_ne", values_to = "Extra") %>% 
   filter(Extra != "No") %>% 
   select(!che_me_ne)
-  
-```
 
+```
+ 
+### Attributes information and table
 ```{r}
-specialties <- readxl::read_xlsx("FC_tables/Specialties.xlsx")
 Attr_sum <- readxl::read_xlsx("FC_tables/Attributes/Attributes_summary.xlsx")
 Attr_sum_sc <- readxl::read_xlsx("FC_tables/Attributes/Attributes_scores.xlsx")
 Attr_scores <- readxl::read_xlsx("FC_tables/Attributes/Attributes_system.xlsx")
 ```
 
+### Fucntions to get the Attributes
 ```{r}
 ## provide the count of each value you can use
 ## to put as an attribute
@@ -103,11 +113,23 @@ Attr_score_select <- function(att = "Sel1"){
     count(value)
 }
 
-## change the number of the score you still have (a function only made for inter activeness)
+## change the number of the score you still have 
+## (a function only made for inter activeness)
 Attr_score_remove <- function(df, score){
     df %>% 
     mutate(n = ifelse(value == score, n-1, n)) %>% 
     drop_na()
 }
+
+Attrb_main <- tibble(Attribute = Attr_sum$Attribute, Random1)
+
+Random1 <- Attr_scores %>%
+  filter(scope == "Sel6") %>% 
+  pivot_longer(-scope) %>% 
+  slice_sample(n = 6) %>% 
+  select(value) %>% 
+  tibble::deframe()
+
 ```
 
+## character final tables
