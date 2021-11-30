@@ -120,16 +120,45 @@ Attr_score_remove <- function(df, score){
     mutate(n = ifelse(value == score, n-1, n)) %>% 
     drop_na()
 }
+```
 
-Attrb_main <- tibble(Attribute = Attr_sum$Attribute, Random1)
+### Functions to get a random char
+```{r}
 
-Random1 <- Attr_scores %>%
-  filter(scope == "Sel6") %>% 
+## get Attrb
+get_r_attrb <- function(){
+  Random_attrbs <- Attr_scores %>%
+  slice_sample() %>% 
   pivot_longer(-scope) %>% 
   slice_sample(n = 6) %>% 
-  select(value) %>% 
-  tibble::deframe()
+  pull(value)
+  
+  return(Random_attrbs)
+}
 
+get_r_origin <- function(){
+  origin_species <- list()
+  
+  origin_species$general <- species_gen %>%
+  slice_sample()
+  
+  origin_species$species_attrb <- species_Att %>%
+  filter(Species == pull(origin_species$general, Species))
+  
+  origin_species$extras<- species_Ext %>%
+  filter(Species == pull(origin_species$general, Species))
+  
+  if (pull(origin_species$general, Species) == "Human") {
+    
+  }
+  return(origin_species)
+}
+
+
+Random_Character <- function(){
+  Attributes <- tibble(Attr_sum, Attrb_main = get_r_attrb())
+  return(Attributes)
+}
 ```
 
 ## character final tables
