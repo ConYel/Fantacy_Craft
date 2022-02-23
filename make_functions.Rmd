@@ -21,6 +21,7 @@ library(dplyr)
 library(tidyr)
 library(magrittr)
 library(stringr)
+library(tibble)
 ```
 
 
@@ -29,22 +30,26 @@ library(stringr)
 ```{r}
 
 species <- readxl::read_xlsx("FC_tables/Species.xlsx")
+
+# pick species general characteristics
 species_gen <- species %>% 
   select(!starts_with(c("Att","Extr")))
 
+# pick species Attributes
 species_Att <- species %>% 
   select(Species, starts_with("Att")) %>% 
   pivot_longer(cols = starts_with("Attr_"), 
-               names_to = "che_me_ne", values_to = "Attribute") %>% 
+               names_to = "Attr_Value", values_to = "Attribute") %>% 
   pivot_longer(cols = starts_with("Att_Score"), 
-               names_to = "fotte", values_to = "score") %>%
-  filter(score != 0, Attribute != "No") %>% 
-  mutate(che_me_ne = che_me_ne %>% str_remove("Attr_") %>% as.integer(),
-         fotte = fotte %>% str_remove("Att_Score_") %>% as.integer()) %>% 
-  filter(che_me_ne == fotte) %>% 
-  select(-c(che_me_ne, fotte)) %>%
+               names_to = "Score_Value", values_to = "score") %>%
+  filter(Attribute != "No") %>% 
+  mutate(Attr_Value = Attr_Value %>% str_remove("Attr_") %>% as.integer(),
+         Score_Value = Score_Value %>% str_remove("Att_Score_") %>% as.integer()) %>% 
+  filter(Attr_Value == Score_Value) %>% 
+  select(-c(Attr_Value, Score_Value)) %>%
   separate_rows(Attribute)
 
+# pick species extra abilities
 species_Ext <- species %>% 
   select(Species, starts_with("Extr")) %>% 
   pivot_longer(cols = c(Extra_1:Extra_10)) %>% 
@@ -56,53 +61,61 @@ species_Ext <- species %>%
 ```{r}
 talents <- readxl::read_xlsx("FC_tables/Talents.xlsx")
 
+# pick talents general characteristics
+talents_gen <- talents %>% 
+  select(!starts_with(c("Attri", "Modi", "Benef")))
+
+# pick talents Attributes
 talents_Att <- talents %>% 
   select(Talent, starts_with(c("Attri", "Modi"))) %>% 
   pivot_longer(cols = starts_with("Attr"), 
-               names_to = "che_me_ne", values_to = "Attribute") %>% 
+               names_to = "Attr_Value", values_to = "Attribute") %>% 
   pivot_longer(cols = starts_with("Mod"), 
-               names_to = "fotte", values_to = "score") %>%
-  mutate(che_me_ne = che_me_ne %>% str_remove("Attribute_") %>% as.integer(),
-         fotte = fotte %>% str_remove("Modifier_") %>% as.integer()) %>% 
-  filter(che_me_ne == fotte) %>% 
-  select(-c(che_me_ne, fotte)) %>%
-  distinct(Talent, Attribute, score)
+               names_to = "Score_Value", values_to = "score") %>%
+  filter(Attribute != "No") %>% 
+  mutate(Attr_Value = Attr_Value %>% str_remove("Attribute_") %>% as.integer(),
+         Score_Value = Score_Value %>% str_remove("Modifier_") %>% as.integer()) %>% 
+  filter(Attr_Value == Score_Value) %>% 
+  select(-c(Attr_Value, Score_Value))
 
+# pick talents Benefits
 talents_Benef <- talents %>% 
   select(Talent, starts_with("Benef")) %>% 
   pivot_longer(cols = starts_with("Benef"), 
-               names_to = "che_me_ne", values_to = "Benefit") %>% 
+               names_to = "Benefit_value", values_to = "Benefit") %>% 
   filter(Benefit != "No") %>% 
-  select(!che_me_ne)
-
-talents_1 <- talents %>% 
-  select(!starts_with(c("Attri", "Modi", "Benef")))
+  select(!Benefit_value)
 ```
 
 ### specialties info
 ```{r}
 specialties <- readxl::read_xlsx("FC_tables/Specialties.xlsx")
 
-specialties_1 <- specialties %>% 
+# pick specialties general characteristics
+specialties_gen <- specialties %>% 
   select(!starts_with("Extra")) 
 
+# pick specialties extra abilities
 specialties_extra <- specialties %>% 
   select(Specialty, starts_with("Extra")) %>% 
   pivot_longer(cols = starts_with("Extra"), 
-               names_to = "che_me_ne", values_to = "Extra") %>% 
+               names_to = "specialties_values", values_to = "Extra") %>% 
   filter(Extra != "No") %>% 
-  select(!che_me_ne)
-
+  select(!specialties_values)
 ```
  
 ### Attributes information and table
 ```{r}
 Attr_sum <- readxl::read_xlsx("FC_tables/Attributes/Attributes_summary.xlsx")
-Attr_sum_sc <- readxl::read_xlsx("FC_tables/Attributes/Attributes_scores.xlsx")
+Attr_sum_sc <- readxl::read_xlsx("FC_tables/Attributes/Attributes_scores.xlsx") %>% mutate(Cost = as.numeric(Cost))
 Attr_scores <- readxl::read_xlsx("FC_tables/Attributes/Attributes_system.xlsx")
+
+# Attr_scores  %>% pivot_longer(-scope) %>% left_join(Attr_sum_sc, by = c("value" = "Score"))
+# Attr_scores  %>% pivot_longer(-scope) %>% left_join(Attr_sum_sc, by = c("value" = "Score")) %>% group_by(scope) %>% summarize(across(.cols = where(is.numeric), .fns = ~ sum(.x, na.rm = TRUE))) %>% arrange(desc(value, Modifier))
 ```
 
-### Fucntions to get the Attributes
+## Functions
+### Attr_score_select Fucntion, to get the Attributes
 ```{r}
 ## provide the count of each value you can use
 ## to put as an attribute
@@ -114,7 +127,7 @@ Attr_score_select <- function(att = "Sel1"){
 }
 
 ## change the number of the score you still have 
-## (a function only made for inter activeness)
+## (an interactive function for later)
 Attr_score_remove <- function(df, score){
     df %>% 
     mutate(n = ifelse(value == score, n-1, n)) %>% 
@@ -122,8 +135,50 @@ Attr_score_remove <- function(df, score){
 }
 ```
 
-### Functions to get a random char
+### character_description Function
 ```{r}
+##character creation
+character_description <- list(
+                  Name = "Name",
+                  Surname = "sName",
+                  Nickname = "ncname",
+                  Player = "player name",
+                  Gender = "Male or Female",
+                  Age = "25 years",
+                  Height = 180,
+                  Weight = 90,
+                  Hair = "Black",
+                  Eyes = "Blue")
+```
+
+### character_origin Function
+```{r}
+character_origin <- list(
+               Species = "species",
+               Talent = "a talent",
+               Specialty = "a specialty",
+               Size = "M",
+               Space = "1x1",
+               Reach = 1,
+               Wounds = 1.00,
+               Ground_speed = 30)
+```
+
+
+```{r}
+get_initial_attrb <- function(x = "Sas_1", init_table = Attr_scores){
+  init_attr_vector <- init_table %>% 
+    filter(SAS == x) %>% 
+    pivot_longer(-SAS) %>% 
+    slice_sample(n = 6) %>% 
+    pull(value)
+  
+  return(init_attr_vector)
+}
+
+Main_char_Attrb <- Attr_sum %>% 
+  add_column(Score = get_initial_attrb(x = "Sas_13")) %>% 
+  left_join(Attr_sum_sc)
 
 ## get Attrb
 get_r_attrb <- function(){
