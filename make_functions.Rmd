@@ -22,6 +22,7 @@ library(tidyr)
 library(magrittr)
 library(stringr)
 library(tibble)
+library(purrr)
 ```
 
 
@@ -111,8 +112,116 @@ Attr_sum_sc <- readxl::read_xlsx("FC_tables/Attributes/Attributes_scores.xlsx") 
 Attr_scores <- readxl::read_xlsx("FC_tables/Attributes/Attributes_system.xlsx")
 
 # Attr_scores  %>% pivot_longer(-scope) %>% left_join(Attr_sum_sc, by = c("value" = "Score"))
-# Attr_scores  %>% pivot_longer(-scope) %>% left_join(Attr_sum_sc, by = c("value" = "Score")) %>% group_by(scope) %>% summarize(across(.cols = where(is.numeric), .fns = ~ sum(.x, na.rm = TRUE))) %>% arrange(desc(value, Modifier))
+# Attr_scores  %>% pivot_longer(-scope) %>% left_join(Attr_sum_sc, by = c("value" = "Score")) %>% group_by(scope) %>% summarize(across(.cols = where(is.numeric), .fns = ~ sum(.x, na.rm = TRUE))) %>% arrange(desc(value, Modifier)) %>% left_join(Attr_scores)
 ```
+
+### Attributes pick table
+Check all different combinations for the starting values of Attributes
+```{r}
+
+cost_values <- Attr_sum_sc %>% drop_na()
+
+attr_pick <- function(perm, cost_v = cost_values, attr_total_cost = 36){
+  
+  my_selected_values <- slice_sample(cost_values, n = 6, replace = TRUE)
+  
+  Attr_total_cost <- my_selected_values %>% summarise(sum_cost = sum(Cost)) %>% pull(sum_cost)
+  
+  Attr_total_mod <- my_selected_values %>% summarise(mod_res = sum(Modifier)) %>% pull(mod_res)
+  
+  result_tbl <- my_selected_values %>% mutate(Cost_sum = sum(Cost), Mod_sum = sum(Modifier))
+                                              
+  ifelse(test = (Attr_total_cost == attr_total_cost) & (Attr_total_mod < 6), 
+         yes = return(result_tbl),
+         no = return(attr_pick()))
+  }
+
+tic()
+first_test <- map_dfr(str_c("dat", 1:100) %>% set_names, attr_pick, .id = "Passed_sets")
+toc()
+
+best_sets_1 <- first_test %>% 
+  mutate(Passed_sets = str_remove(Passed_sets,"dat") %>% as.numeric() ) %>% 
+  select(-c(Cost, Modifier)) %>% 
+  arrange(Passed_sets, desc(Score)) %>% 
+  mutate(Attr = rep(c("Str", "Dex", "Con", "Int", "Wis", "Cha" ), 100)) %>% 
+  pivot_wider(names_from = "Attr", values_from = "Score") %>% 
+  arrange(desc(Mod_sum)) %>% 
+  distinct(Str, Dex, Con, Int, Wis, Cha, .keep_all = TRUE)
+
+best_sets %>% vroom::vroom_write("best_attrib_values_sets.txt")
+#old_best_sets <- vroom::vroom("best_attrib_values_sets.txt")
+
+# use multiple procs
+library(furrr)
+plan(multisession, workers = 4)
+
+tic()
+third_test <- future_map_dfr(str_c("dat", 1:100) %>% set_names, attr_pick, .id = "Passed_sets")
+toc()
+
+best_sets_2 <- second_test %>% 
+  mutate(Passed_sets = str_remove(Passed_sets,"dat") %>% as.numeric() ) %>% 
+  select(-c(Cost, Modifier)) %>% 
+  arrange(Passed_sets, desc(Score)) %>% 
+  mutate(Attr = rep(c("Str", "Dex", "Con", "Int", "Wis", "Cha" ), 100)) %>% 
+  pivot_wider(names_from = "Attr", values_from = "Score") %>% 
+  arrange(desc(Mod_sum)) %>% 
+  distinct(Str, Dex, Con, Int, Wis, Cha, .keep_all = TRUE)
+
+best_sets_3 <- third_test %>% 
+  mutate(Passed_sets = str_remove(Passed_sets,"dat") %>% as.numeric() ) %>% 
+  select(-c(Cost, Modifier)) %>% 
+  arrange(Passed_sets, desc(Score)) %>% 
+  mutate(Attr = rep(c("Str", "Dex", "Con", "Int", "Wis", "Cha" ), 100)) %>% 
+  pivot_wider(names_from = "Attr", values_from = "Score") %>% 
+  arrange(desc(Mod_sum)) %>% 
+  distinct(Str, Dex, Con, Int, Wis, Cha, .keep_all = TRUE)
+
+### 1000 test
+tic()
+fourth_test <- future_map_dfr(str_c("dat", 1:1000) %>% set_names, attr_pick, .id = "Passed_sets")
+toc()
+
+best_sets_4 <- fourth_test %>% 
+  mutate(Passed_sets = str_remove(Passed_sets,"dat") %>% as.numeric() ) %>% 
+  select(-c(Cost, Modifier)) %>% 
+  arrange(Passed_sets, desc(Score)) %>% 
+  mutate(Attr = rep(c("Str", "Dex", "Con", "Int", "Wis", "Cha" ), 1000)) %>% 
+  pivot_wider(names_from = "Attr", values_from = "Score") %>% 
+  arrange(desc(Mod_sum)) %>% 
+  distinct(Str, Dex, Con, Int, Wis, Cha, .keep_all = TRUE)
+
+tic()
+fifth_test <- future_map_dfr(str_c("dat", 1:1000) %>% set_names, attr_pick, .id = "Passed_sets")
+toc()
+
+best_sets_5 <- fifth_test %>% 
+  mutate(Passed_sets = str_remove(Passed_sets,"dat") %>% as.numeric() ) %>% 
+  select(-c(Cost, Modifier)) %>% 
+  arrange(Passed_sets, desc(Score)) %>% 
+  mutate(Attr = rep(c("Str", "Dex", "Con", "Int", "Wis", "Cha" ), 1000)) %>% 
+  pivot_wider(names_from = "Attr", values_from = "Score") %>% 
+  arrange(desc(Mod_sum)) %>% 
+  distinct(Str, Dex, Con, Int, Wis, Cha, .keep_all = TRUE)
+
+# collapse all sets and distinct them
+
+all_sets <- bind_rows(old_best_sets, best_sets_2, 
+                      best_sets_3, best_sets_4, 
+                      best_sets_5, .id = "set") %>% 
+  arrange(desc(Mod_sum)) %>% 
+  distinct(Str, Dex, Con, Int, Wis, Cha, .keep_all = TRUE)
+
+all_sets %>% 
+  rename_with(Str:Cha, .fn = ~str_c("A", 1:6)) %>% 
+  vroom::vroom_write("FC_tables/Attributes/best_Attributes_system_sets.txt")
+#all_sets <- vroom::vroom("FC_tables/Attributes/best_Attributes_system_sets.txt")
+#######
+#library(particions)
+#library(iterpc)restrictedparts()
+```
+
 
 ## Functions
 ### Attr_score_select Fucntion, to get the Attributes
