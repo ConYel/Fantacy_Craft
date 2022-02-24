@@ -15,7 +15,7 @@ editor_options:
   chunk_output_type: console
 ---
 
-## libraries
+# Libraries
 ```{r}
 library(dplyr)
 library(tidyr)
@@ -23,9 +23,11 @@ library(magrittr)
 library(stringr)
 library(tibble)
 library(purrr)
+library(tictoc)
+library(furrr)
 ```
 
-
+# Basic Information
 ## tables we need
 ### species info
 ```{r}
@@ -37,18 +39,9 @@ species_gen <- species %>%
   select(!starts_with(c("Att","Extr")))
 
 # pick species Attributes
-species_Att <- species %>% 
-  select(Species, starts_with("Att")) %>% 
-  pivot_longer(cols = starts_with("Attr_"), 
-               names_to = "Attr_Value", values_to = "Attribute") %>% 
-  pivot_longer(cols = starts_with("Att_Score"), 
-               names_to = "Score_Value", values_to = "score") %>%
-  filter(Attribute != "No") %>% 
-  mutate(Attr_Value = Attr_Value %>% str_remove("Attr_") %>% as.integer(),
-         Score_Value = Score_Value %>% str_remove("Att_Score_") %>% as.integer()) %>% 
-  filter(Attr_Value == Score_Value) %>% 
-  select(-c(Attr_Value, Score_Value)) %>%
-  separate_rows(Attribute)
+species_Att %>% select(Species, Str:Any_2) %>% # drakes have Str OR INT
+  pivot_longer(cols = -Species) %>% 
+  arrange(Species)
 
 # pick species extra abilities
 species_Ext <- species %>% 
@@ -60,7 +53,7 @@ species_Ext <- species %>%
 
 ### talents info
 ```{r}
-talents <- readxl::read_xlsx("FC_tables/Talents.xlsx")
+talents <- vroom::vroom("FC_tables/Talents.txt")
 
 # pick talents general characteristics
 talents_gen <- talents %>% 
@@ -105,17 +98,18 @@ specialties_extra <- specialties %>%
   select(!specialties_values)
 ```
  
-### Attributes information and table
+### Attributes information and tables
 ```{r}
 Attr_sum <- readxl::read_xlsx("FC_tables/Attributes/Attributes_summary.xlsx")
 Attr_sum_sc <- readxl::read_xlsx("FC_tables/Attributes/Attributes_scores.xlsx") %>% mutate(Cost = as.numeric(Cost))
-Attr_scores <- readxl::read_xlsx("FC_tables/Attributes/Attributes_system.xlsx")
+
+Attr_scores <- vroom::vroom("FC_tables/Attributes/best_Attributes_system_sets.txt")
 
 # Attr_scores  %>% pivot_longer(-scope) %>% left_join(Attr_sum_sc, by = c("value" = "Score"))
 # Attr_scores  %>% pivot_longer(-scope) %>% left_join(Attr_sum_sc, by = c("value" = "Score")) %>% group_by(scope) %>% summarize(across(.cols = where(is.numeric), .fns = ~ sum(.x, na.rm = TRUE))) %>% arrange(desc(value, Modifier)) %>% left_join(Attr_scores)
 ```
 
-### Attributes pick table
+#### Attributes pick table
 Check all different combinations for the starting values of Attributes
 ```{r}
 
@@ -213,26 +207,52 @@ all_sets <- bind_rows(old_best_sets, best_sets_2,
   arrange(desc(Mod_sum)) %>% 
   distinct(Str, Dex, Con, Int, Wis, Cha, .keep_all = TRUE)
 
-all_sets %>% 
+all_sets <- all_sets %>% 
   rename_with(Str:Cha, .fn = ~str_c("A", 1:6)) %>% 
+  unite("set", c("set", "Passed_sets")) %>% 
   vroom::vroom_write("FC_tables/Attributes/best_Attributes_system_sets.txt")
+
 #all_sets <- vroom::vroom("FC_tables/Attributes/best_Attributes_system_sets.txt")
 #######
 #library(particions)
 #library(iterpc)restrictedparts()
 ```
 
-
+# Select Attributes etc
 ## Functions
-### Attr_score_select Fucntion, to get the Attributes
+### select_attr_score Function, to get the Attributes
 ```{r}
 ## provide the count of each value you can use
 ## to put as an attribute
-Attr_score_select <- function(att = "Sel1"){
-  Attr_scores %>% 
-    filter(scope == att) %>% 
-    pivot_longer(-scope) %>% 
-    count(value)
+select_attr_score <- function(dt_set = NULL, Set = NULL, 
+                              Modifier_sum = NULL, Modifier_condition = NULL){
+  if(is.null(dt_set)) {
+    rlang::abort(message = "dt_set is missing! Provide a dataset of values", call. = FALSE)
+  }
+  
+  if (is.null(Modifier_sum)) {
+    dt_set
+  }else if(!is.null(Modifier_sum) & is.null(Modifier_condition)) { 
+       dt_set <- dt_set %>% filter(Mod_sum == Modifier_sum)
+  } else if(!is.null(Modifier_sum) & (Modifier_condition %in% c("More", "more"))) { 
+       dt_set <- dt_set %>% filter(Mod_sum >= Modifier_sum)
+  } else if (!is.null(Modifier_sum) & (Modifier_condition %in% c("Less", "less"))) { 
+       dt_set <- dt_set %>% filter(Mod_sum <= Modifier_sum)
+  } else dt_set
+  
+  if(is.null(Set)) {
+       Set <- dt_set %>% slice_sample() %>% pull(set)
+       rlang::warn(str_c("\'Set\' is missing! Picking a random Set from the Sets:", Set))
+  }
+  
+  dt_set_selected <- dt_set %>% 
+    filter(set == Set) %>%
+    pivot_longer(cols = -c(set , Cost_sum, Mod_sum)) %>% 
+    add_count(value) %>% 
+    distinct(value, n, .keep_all = TRUE) %>% 
+    select(-name)
+    
+  return(dt_set_selected)
 }
 
 ## change the number of the score you still have 
@@ -244,8 +264,60 @@ Attr_score_remove <- function(df, score){
 }
 ```
 
+### select_Species Function, to pick the Species of the character
+```{r}
+select_species <- function(sel_spec = NULL, dt = species){
+  if (is.null(sel_spec)) {
+    dt <- dt %>% slice_sample()
+  } else dt <- dt %>% filter(str_detect(Species, regex(pattern = sel_spec, ignore_case = TRUE)))
+  return(dt)
+}
+
+
+###
+select_Species <- function(){
+  origin_species <- list()
+  
+  origin_species$general <- species_gen %>%
+  slice_sample()
+  
+  origin_species$species_attrb <- species_Att %>%
+  filter(Species == pull(origin_species$general, Species))
+  
+  origin_species$extras<- species_Ext %>%
+  filter(Species == pull(origin_species$general, Species))
+  
+  if (pull(origin_species$general, Species) == "Human") {
+    
+  }
+  return(origin_species)
+}
+```
+
+### select_specialty Function, to pick the specialty of the character
+```{r}
+select_specialty <- function(sel_spelty = NULL, dt = specialties){
+  if (is.null(sel_spelty)) {
+    dt <- dt %>% slice_sample()
+  } else dt <- dt %>% filter(str_detect(Specialty, regex(pattern = sel_spelty, ignore_case = TRUE)))
+  return(dt)
+}
+```
+
+### select_talent Function, to pick the talent of the character
+```{r}
+select_talent <- function(sel_talent = NULL, dt = talents){
+  if (is.null(sel_talent)) {
+    dt <- dt %>% slice_sample()
+  } else dt <- dt %>% filter(str_detect(Talent, regex(pattern = sel_talent, ignore_case = TRUE)))
+  return(dt)
+}
+```
+
+
 ### character_description Function
 ```{r}
+
 ##character creation
 character_description <- list(
                   Name = "Name",
@@ -300,23 +372,6 @@ get_r_attrb <- function(){
   return(Random_attrbs)
 }
 
-get_r_origin <- function(){
-  origin_species <- list()
-  
-  origin_species$general <- species_gen %>%
-  slice_sample()
-  
-  origin_species$species_attrb <- species_Att %>%
-  filter(Species == pull(origin_species$general, Species))
-  
-  origin_species$extras<- species_Ext %>%
-  filter(Species == pull(origin_species$general, Species))
-  
-  if (pull(origin_species$general, Species) == "Human") {
-    
-  }
-  return(origin_species)
-}
 
 
 Random_Character <- function(){
